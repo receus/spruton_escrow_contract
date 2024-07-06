@@ -67,6 +67,10 @@
   },
   "include": [
     "sources/**/*",
-    "sources/token_master.deploy.ts"
+    "sources/scripts/token_master.deploy.ts",
+    "sources/scripts/remove_product.deploy.ts",
+    "sources/scripts/sell_product.deploy.ts",
+    "sources/scripts/seller_contract.deploy.ts",
+    "sources/scripts/add_product.deploy.ts"
   ]
 }

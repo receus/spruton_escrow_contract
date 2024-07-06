@@ -1,19 +1,16 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Address, toNano, beginCell, contractAddress } from "@ton/core";
-import { SellerContract } from "./output/seller_SellerContract";
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "@ton/crypto";
 import { TonClient, WalletContractV4, internal } from "@ton/ton";
 
-const configPath = path.resolve(__dirname, './config.json');
+const configPath = path.resolve(__dirname, './util/config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
 const testnet = config.testnet;
 const mnemonic = config.mnemonic;
-const ownerAddress = Address.parse(config.ownerAddress);
-const serviceWallet = Address.parse(config.serviceWallet);
-const jettonMaster = Address.parse(config.jettonMaster);
+const sellerContractAddress = Address.parse(config.sellerContractAddress);
 
 (async () => {
     const key = await mnemonicToWalletKey(mnemonic.split(" "));
@@ -22,24 +19,30 @@ const jettonMaster = Address.parse(config.jettonMaster);
     const endpoint = await getHttpEndpoint({ network: "testnet" });
     const client = new TonClient({ endpoint });
 
-    const randomTag = beginCell().storeUint(Math.floor(Math.random() * 1000000), 32).endCell();
-
-    let initSellerContract = await SellerContract.init(ownerAddress, serviceWallet, jettonMaster, randomTag);
-    let sellerContractAddress = contractAddress(0, initSellerContract);
-    let data = initSellerContract.data.toBoc();
-    let pkg = fs.readFileSync(path.resolve(__dirname, "./output", "seller_SellerContract.pkg"));
-
     const walletContract = client.open(wallet);
     const seqno = await walletContract.getSeqno();
+
+    const productId = 1n;
+    const buyer = Address.parse("0QBbp-UouEK-mWlkXs6mOGfZ0esgtW8SE-gknp_6Pvt7Ve-y");
+    const referral = Address.parse("0QBbp-UouEK-mWlkXs6mOGfZ0esgtW8SE-gknp_6Pvt7Ve-y");
+    const amount = 2;
+
+    const sellProductMessage = beginCell()
+        .storeUint(0, 32)
+        .storeUint(productId, 32)
+        .storeAddress(buyer)
+        .storeAddress(referral)
+        .storeUint(amount, 64)
+        .endCell();
+
     await walletContract.sendTransfer({
         secretKey: key.secretKey,
         seqno: seqno,
         messages: [
             internal({
                 to: sellerContractAddress,
-                value: "0.05", // 0.05 TON
-                body: beginCell()
-                    .endCell(),
+                value: "0.05",
+                body: sellProductMessage,
                 bounce: false,
             })
         ]
@@ -52,10 +55,7 @@ const jettonMaster = Address.parse(config.jettonMaster);
         currentSeqno = await walletContract.getSeqno();
     }
 
-    console.log("Contract deployed at:", sellerContractAddress.toString({ testOnly: testnet }));
-
-    config.sellerContractAddress = sellerContractAddress.toString({ testOnly: testnet });
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log("Product sold in contract at:", sellerContractAddress.toString({ testOnly: testnet }));
 })();
 
 function sleep(ms: number) {

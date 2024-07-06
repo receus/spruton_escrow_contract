@@ -3,14 +3,14 @@
   "scripts": {
     "build": "tact --config ./tact.config.json",
     "test": "jest",
-    "deploy": "ts-node ./sources/seller_contract.deploy.ts",
-    "deploy_token_master": "ts-node ./sources/token_master.deploy.ts",
-    "deploy_seller_contract": "ts-node ./sources/seller_contract.deploy.ts",
-    "deploy_transfer_jetton": "ts-node ./sources/transfer_jetton.deploy.ts",
-    "deploy_all_products": "ts-node ./sources/all_products.deploy.ts",
-    "deploy_add_product": "ts-node ./sources/add_product.deploy.ts",
-    "deploy_sell_product": "ts-node ./sources/sell_product.deploy.ts",
-    "deploy_remove_product": "ts-node ./sources/remove_product.deploy.ts",
+    "deploy": "ts-node ./sources/scripts/seller_contract.deploy.ts",
+    "deploy_token_master": "ts-node ./sources/scripts/token_master.deploy.ts",
+    "deploy_seller_contract": "ts-node ./sources/scripts/seller_contract.deploy.ts",
+    "deploy_transfer_jetton": "ts-node ./sources/scripts/transfer_jetton.deploy.ts",
+    "deploy_all_products": "ts-node ./sources/scripts/all_products.deploy.ts",
+    "deploy_add_product": "ts-node ./sources/scripts/add_product.deploy.ts",
+    "deploy_sell_product": "ts-node ./sources/scripts/sell_product.deploy.ts",
+    "deploy_remove_product": "ts-node ./sources/scripts/remove_product.deploy.ts",
     "read": "ts-node ./sources/contract.read.ts"
   },
   "dependencies": {

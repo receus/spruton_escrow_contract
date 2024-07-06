@@ -1,15 +1,15 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Address, contractAddress, beginCell, toNano } from "@ton/core";
-import { TokenMaster } from "./output/token_TokenMaster";
+import { TokenMaster } from "../output/token_TokenMaster";
 import { prepareTactDeployment } from "@tact-lang/deployer";
-import { buildOnchainMetadata } from "./build_data";
-import metadata from './data.json';
+import { buildOnchainMetadata } from "./util/build_data";
+import metadata from './util/data.json';
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "@ton/crypto";
 import { TonClient, WalletContractV4, internal } from "@ton/ton";
 
-const configPath = path.resolve(__dirname, './config.json');
+const configPath = path.resolve(__dirname, './util/config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
 const testnet = config.testnet;
@@ -28,7 +28,7 @@ const initialTotalSupply = toNano("1000000");
     let init = await TokenMaster.init(owner, buildOnchainMetadata(metadata));
     let address = contractAddress(0, init);
     let data = init.data.toBoc();
-    let pkg = fs.readFileSync(path.resolve(__dirname, "./output", "token_TokenMaster.pkg"));
+    let pkg = fs.readFileSync(path.resolve(__dirname, "../output", "token_TokenMaster.pkg"));
 
     console.log('Uploading package...');
     let prepare = await prepareTactDeployment({ pkg, data, testnet });

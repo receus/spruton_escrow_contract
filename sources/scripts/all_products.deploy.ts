@@ -1,12 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Address, beginCell } from "@ton/core";
-import { SellerContract } from "./output/seller_SellerContract";
+import { SellerContract } from "../output/seller_SellerContract";
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "@ton/crypto";
 import { TonClient, WalletContractV4, internal } from "@ton/ton";
 
-const configPath = path.resolve(__dirname, 'config.json');
+const configPath = path.resolve(__dirname, './util/config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
 const testnet = config.testnet;

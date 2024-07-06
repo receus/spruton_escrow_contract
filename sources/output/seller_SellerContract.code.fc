@@ -1,0 +1,283 @@
+#pragma version =0.4.4;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+#include "seller_SellerContract.headers.fc";
+#include "seller_SellerContract.stdlib.fc";
+#include "seller_SellerContract.storage.fc";
+
+;;
+;; Contract SellerContract functions
+;;
+
+(slice, cell, (int, int, int, int), int, int, slice, slice) $SellerContract$_contract_init(slice $owner, slice $serviceWallet, slice $jettonMaster, cell $random_tag) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = (null(), null(), null(), null(), null(), null(), null());
+    $self'owner = $owner;
+    $self'created = now();
+    $self'lastUpdated = $self'created;
+    ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer) = $RewardDistribution$_constructor_burn_service_referral_buyer(15, 20, 50, 15);
+    $self'products = null();
+    $self'serviceWallet = $serviceWallet;
+    $self'jettonMaster = $jettonMaster;
+    return ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster);
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), ()) $SellerContract$_fun_burn((slice, cell, (int, int, int, int), int, int, slice, slice) $self, int $amount) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    $global_send($SendParameters$_constructor_to_body_value_mode($self'jettonMaster, $Burn$_store_cell($Burn$_constructor_query_id_amount_response_destination_custom_payload(now(), $amount, my_address(), $global_emptyCell())), 30000000, 2));
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), slice) $SellerContract$_fun_getWalletAddress((slice, cell, (int, int, int, int), int, int, slice, slice) $self, slice $owner) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    var ($init'code, $init'data) = $TokenWallet$_init_child(__tact_context_sys, $owner, $self'jettonMaster);
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), $global_contractAddress(($init'code, $init'data)));
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), ()) $SellerContract$_fun_transfer((slice, cell, (int, int, int, int), int, int, slice, slice) $self, int $amount, slice $to) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    slice $walletAddress = ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_getWalletAddress($to);
+    $global_send($SendParameters$_constructor_to_body_value_mode($walletAddress, $InternalTransfer$_store_cell($InternalTransfer$_constructor_query_id_amount_from_response_destination_forward_ton_amount_forward_payload(now(), $amount, my_address(), $to, 10000000, $global_emptySlice())), 30000000, 2));
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), ()) $SellerContract$_fun_distributeRewards((slice, cell, (int, int, int, int), int, int, slice, slice) $self, (int, int, int) $product, slice $buyer, slice $referral, slice $seller, int $amount) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    var (($product'id, $product'reward, $product'quantity)) = $product;
+    int $totalReward = $product'reward;
+    int $burnAmount = (($totalReward * $self'rewardDistribution'burn) / 100);
+    int $serviceAmount = (($totalReward * $self'rewardDistribution'service) / 100);
+    int $referralAmount = (($totalReward * $self'rewardDistribution'referral) / 100);
+    int $buyerAmount = (($totalReward * $self'rewardDistribution'buyer) / 100);
+    ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_burn($burnAmount);
+    ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_transfer($serviceAmount, $self'serviceWallet);
+    ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_transfer($referralAmount, $referral);
+    ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_transfer($buyerAmount, $buyer);
+    ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_transfer(($amount - $totalReward), $seller);
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), int) $SellerContract$_fun_created((slice, cell, (int, int, int, int), int, int, slice, slice) $self) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), $self'created);
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), int) $SellerContract$_fun_lastUpdated((slice, cell, (int, int, int, int), int, int, slice, slice) $self) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), $self'lastUpdated);
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), (int, int, int)) $SellerContract$_fun_product((slice, cell, (int, int, int, int), int, int, slice, slice) $self, int $productId) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    tuple $productOpt = $Product$_load_opt(__tact_dict_get_uint_cell($self'products, 32, $productId));
+    if (null?($productOpt)) {
+        throw(103);
+    }
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), $Product$_not_null($productOpt));
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), cell) $SellerContract$_fun_productIds((slice, cell, (int, int, int, int), int, int, slice, slice) $self) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    builder $builder = begin_cell();
+    var ($key, $fresh$underscore_3, $fresh$flag_2) = __tact_dict_min_uint_cell($self'products, 32);
+    while ($fresh$flag_2) {
+        var ($_'id, $_'reward, $_'quantity) = $Product$_not_null($Product$_load_opt($fresh$underscore_3));
+        $builder = store_uint($builder, $key, 32);
+        ($key, $fresh$underscore_3, $fresh$flag_2) = __tact_dict_next_uint_cell($self'products, 32, $key);
+    }
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), end_cell($builder));
+}
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), slice) $SellerContract$_fun_owner((slice, cell, (int, int, int, int), int, int, slice, slice) $self) impure inline_ref {
+    var (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)) = $self;
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), $self'owner);
+}
+
+;;
+;; Receivers of a Contract SellerContract
+;;
+
+(((slice, cell, (int, int, int, int), int, int, slice, slice)), ()) $SellerContract$_internal_binary_SellProduct((slice, cell, (int, int, int, int), int, int, slice, slice) $self, (int, slice, slice, int) $msg) impure inline {
+    var ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster) = $self;
+    var ($msg'productId, $msg'buyer, $msg'referral, $msg'amount) = $msg;
+    tuple $productOpt = $Product$_load_opt(__tact_dict_get_uint_cell($self'products, 32, $msg'productId));
+    if (( (null?($productOpt)) ? (true) : (($Product$_get_quantity($Product$_not_null($productOpt)) < $msg'amount)) )) {
+        throw(102);
+    }
+    var ($product'id, $product'reward, $product'quantity) = $Product$_not_null($productOpt);
+    $product'quantity = $product'quantity - $msg'amount;
+    $self'products~__tact_dict_set_uint_cell(32, $msg'productId, $Product$_store_cell(($product'id, $product'reward, $product'quantity)));
+    ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_distributeRewards(($product'id, $product'reward, $product'quantity), $msg'buyer, $msg'referral, $self'owner, $msg'amount);
+    $self'lastUpdated = now();
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+(((slice, cell, (int, int, int, int), int, int, slice, slice)), ()) $SellerContract$_internal_binary_AddProduct((slice, cell, (int, int, int, int), int, int, slice, slice) $self, (int, int, int) $msg) impure inline {
+    var ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster) = $self;
+    var ($msg'productId, $msg'reward, $msg'quantity) = $msg;
+    var ($product'id, $product'reward, $product'quantity) = $Product$_constructor_id_reward_quantity($msg'productId, $msg'reward, $msg'quantity);
+    $self'products~__tact_dict_set_uint_cell(32, $msg'productId, $Product$_store_cell(($product'id, $product'reward, $product'quantity)));
+    $self'lastUpdated = now();
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+(((slice, cell, (int, int, int, int), int, int, slice, slice)), ()) $SellerContract$_internal_binary_RemoveProduct((slice, cell, (int, int, int, int), int, int, slice, slice) $self, (int) $msg) impure inline {
+    var ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster) = $self;
+    var ($msg'productId) = $msg;
+    $self'products~__tact_dict_set_uint_cell(32, $msg'productId, $Product$_store_opt(null()));
+    $self'lastUpdated = now();
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+(((slice, cell, (int, int, int, int), int, int, slice, slice)), ()) $SellerContract$_internal_binary_SetServiceWallet((slice, cell, (int, int, int, int), int, int, slice, slice) $self, (slice) $msg) impure inline {
+    var ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster) = $self;
+    var ($msg'wallet) = $msg;
+    throw_unless(34435, ( __tact_slice_eq_bits(__tact_context_get_sender(), $self'owner) ));
+    $self'serviceWallet = $msg'wallet;
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+(((slice, cell, (int, int, int, int), int, int, slice, slice)), ()) $SellerContract$_internal_binary_Deploy((slice, cell, (int, int, int, int), int, int, slice, slice) $self, (int) $deploy) impure inline {
+    var ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster) = $self;
+    var ($deploy'queryId) = $deploy;
+    ($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster)~$SellerContract$_fun_notify($DeployOk$_store_cell($DeployOk$_constructor_queryId($deploy'queryId)));
+    return (($self'owner, $self'products, ($self'rewardDistribution'burn, $self'rewardDistribution'service, $self'rewardDistribution'referral, $self'rewardDistribution'buyer), $self'created, $self'lastUpdated, $self'serviceWallet, $self'jettonMaster), ());
+}
+
+;;
+;; Get methods of a Contract SellerContract
+;;
+
+_ %getWalletAddress(slice $$owner) method_id(96826) {
+    slice $owner = __tact_verify_address($$owner);
+    var self = $SellerContract$_contract_load();
+    var res = self~$SellerContract$_fun_getWalletAddress($owner);
+    return res;
+}
+
+_ %created() method_id(93340) {
+    var self = $SellerContract$_contract_load();
+    var res = self~$SellerContract$_fun_created();
+    return res;
+}
+
+_ %lastUpdated() method_id(112111) {
+    var self = $SellerContract$_contract_load();
+    var res = self~$SellerContract$_fun_lastUpdated();
+    return res;
+}
+
+_ %product(int $$productId) method_id(128553) {
+    int $productId = $$productId;
+    var self = $SellerContract$_contract_load();
+    var res = self~$SellerContract$_fun_product($productId);
+    return $Product$_to_external(res);
+}
+
+_ %productIds() method_id(124842) {
+    var self = $SellerContract$_contract_load();
+    var res = self~$SellerContract$_fun_productIds();
+    return res;
+}
+
+_ %owner() method_id(83229) {
+    var self = $SellerContract$_contract_load();
+    var res = self~$SellerContract$_fun_owner();
+    return res;
+}
+
+_ supported_interfaces() method_id {
+    return (
+        "org.ton.introspection.v0"H >> 128,
+        "org.ton.abi.ipfs.v0"H >> 128,
+        "org.ton.deploy.lazy.v0"H >> 128,
+        "org.ton.chain.workchain.v0"H >> 128,
+        "org.ton.ownable"H >> 128
+    );
+}
+
+_ get_abi_ipfs() method_id {
+    return "ipfs://QmWVwzZKS274vgc2XsVe7n5383Hu1ZV2EAkEdrK4MSVgfZ";
+}
+
+_ lazy_deployment_completed() method_id {
+    return get_data().begin_parse().load_int(1);
+}
+
+;;
+;; Routing of a Contract SellerContract
+;;
+
+((slice, cell, (int, int, int, int), int, int, slice, slice), int) $SellerContract$_contract_router_internal((slice, cell, (int, int, int, int), int, int, slice, slice) self, int msg_bounced, slice in_msg) impure inline_ref {
+    ;; Handle bounced messages
+    if (msg_bounced) {
+        return (self, true);
+    }
+    
+    ;; Parse incoming message
+    int op = 0;
+    if (slice_bits(in_msg) >= 32) {
+        op = in_msg.preload_uint(32);
+    }
+    
+    
+    ;; Receive SellProduct message
+    if (op == 3559581859) {
+        var msg = in_msg~$SellProduct$_load();
+        self~$SellerContract$_internal_binary_SellProduct(msg);
+        return (self, true);
+    }
+    
+    ;; Receive AddProduct message
+    if (op == 839421172) {
+        var msg = in_msg~$AddProduct$_load();
+        self~$SellerContract$_internal_binary_AddProduct(msg);
+        return (self, true);
+    }
+    
+    ;; Receive RemoveProduct message
+    if (op == 404174024) {
+        var msg = in_msg~$RemoveProduct$_load();
+        self~$SellerContract$_internal_binary_RemoveProduct(msg);
+        return (self, true);
+    }
+    
+    ;; Receive SetServiceWallet message
+    if (op == 553423056) {
+        var msg = in_msg~$SetServiceWallet$_load();
+        self~$SellerContract$_internal_binary_SetServiceWallet(msg);
+        return (self, true);
+    }
+    
+    ;; Receive Deploy message
+    if (op == 2490013878) {
+        var msg = in_msg~$Deploy$_load();
+        self~$SellerContract$_internal_binary_Deploy(msg);
+        return (self, true);
+    }
+    
+    return (self, false);
+}
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    var msg_flags = cs~load_uint(4);
+    var msg_bounced = -(msg_flags & 1);
+    slice msg_sender_addr = __tact_verify_address(cs~load_msg_addr());
+    __tact_context = (msg_bounced, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var self = $SellerContract$_contract_load();
+    
+    ;; Handle operation
+    int handled = self~$SellerContract$_contract_router_internal(msg_bounced, in_msg);
+    
+    ;; Throw if not handled
+    throw_unless(130, handled);
+    
+    ;; Persist state
+    $SellerContract$_contract_store(self);
+}

@@ -1,0 +1,14 @@
+{
+  "testnet": true,
+  "mnemonic": "other wagon mammal sting social neutral bus rent moon flight tired wood under spare weapon collect carpet tiger siege skull loyal law luggage cloth",
+  "ownerAddress": "0QA6KMn5XKpl8KLAv18hH1EEqwZp2T9evIvfsZU4zoGCnCSa",
+  "serviceWallet": "0QCf85OeGkH9AOLtWS5CBPrFP6aurlBuUTEvMzm0RJes7ZZR",
+  "jettonMaster": "kQBsgCgYt7Q2BEXeDNjZhRK2CX9rwZz92QBGWKyKa92M-jGC",
+  "sellerContractAddress": "kQBt3kEVNqgeirSfRO8SbgfYzm5BlsJBsi0tIK2_MX77bnAi",
+  "database": {
+    "host": "localhost",
+    "user": "root",
+    "password": "yourpassword",
+    "database": "yourdatabase"
+  }
+}

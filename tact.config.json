@@ -1,10 +1,16 @@
 {
-    "projects": [{
-        "name": "sample",
-        "path": "./sources/contract.tact",
-        "output": "./sources/output",
-        "options":{
-            
+    "projects": [
+        {
+            "name": "token",
+            "path": "./sources/master.tact",
+            "output": "./sources/output",
+            "options": {}
+        },
+        {
+            "name": "seller",
+            "path": "./sources/seller_contract.tact",
+            "output": "./sources/output",
+            "options": {}
         }
-    }]
+    ]
 }

@@ -1,168 +1,76 @@
-import { toNano } from "@ton/core";
+import { beginCell, toNano } from "@ton/core";
 import { ContractSystem } from "@tact-lang/emulator";
-import { SampleTactContract } from "./output/sample_SampleTactContract";
+import { TokenWallet } from "./output/token_TokenWallet";
+import { TokenMaster } from "./output/token_TokenMaster";
+import { inspect } from "util";
 
 describe("contract", () => {
-    it("should deploy correctly", async () => {
-        // Create ContractSystem and deploy contract
-        let system = await ContractSystem.create();
-        let owner = system.treasure("owner");
-        let nonOwner = system.treasure("non-owner");
-        let contract = system.open(await SampleTactContract.fromInit(owner.address));
-        system.name(contract.address, "main");
-        let track = system.track(contract);
-        await contract.send(owner, { value: toNano(1) }, { $$type: "Deploy", queryId: 0n });
-        await system.run();
-        expect(track.collect()).toMatchInlineSnapshot(`
-            [
-              {
-                "$seq": 0,
-                "events": [
-                  {
-                    "$type": "deploy",
-                  },
-                  {
-                    "$type": "received",
-                    "message": {
-                      "body": {
-                        "type": "known",
-                        "value": {
-                          "$$type": "Deploy",
-                          "queryId": 0n,
-                        },
-                      },
-                      "bounce": true,
-                      "from": "@treasure(owner)",
-                      "to": "@main",
-                      "type": "internal",
-                      "value": "1",
-                    },
-                  },
-                  {
-                    "$type": "processed",
-                    "gasUsed": 8040n,
-                  },
-                  {
-                    "$type": "sent",
-                    "messages": [
-                      {
-                        "body": {
-                          "type": "known",
-                          "value": {
-                            "$$type": "DeployOk",
-                            "queryId": 0n,
-                          },
-                        },
-                        "bounce": false,
-                        "from": "@main",
-                        "to": "@treasure(owner)",
-                        "type": "internal",
-                        "value": "0.990764",
-                      },
-                    ],
-                  },
-                ],
-              },
-            ]
-        `);
 
-        // Check counter
-        expect(await contract.getCounter()).toEqual(0n);
+  it('master test', async () => {
+    let system = await ContractSystem.create();
+    let owner1 = system.treasure("owner1");
+    let owner2 = system.treasure("owner2");
+    let master = system.open(await TokenMaster.fromInit(owner1.address, beginCell().endCell(), beginCell().endCell()));
+    let owner1_wallet = system.open(await TokenWallet.fromInit(owner1.address, master.address));
+    let owner2_wallet = system.open(await TokenWallet.fromInit(owner2.address, master.address));
+    let tracker_1 = system.track(owner1_wallet);
+    let tracker_2 = system.track(owner2_wallet);
+    let tracker = system.track(master.address);
 
-        // Increment counter
-        await contract.send(owner, { value: toNano(1) }, "increment");
-        await system.run();
-        expect(track.collect()).toMatchInlineSnapshot(`
-            [
-              {
-                "$seq": 1,
-                "events": [
-                  {
-                    "$type": "received",
-                    "message": {
-                      "body": {
-                        "text": "increment",
-                        "type": "text",
-                      },
-                      "bounce": true,
-                      "from": "@treasure(owner)",
-                      "to": "@main",
-                      "type": "internal",
-                      "value": "1",
-                    },
-                  },
-                  {
-                    "$type": "processed",
-                    "gasUsed": 8176n,
-                  },
-                  {
-                    "$type": "sent",
-                    "messages": [
-                      {
-                        "body": {
-                          "text": "incremented",
-                          "type": "text",
-                        },
-                        "bounce": true,
-                        "from": "@main",
-                        "to": "@treasure(owner)",
-                        "type": "internal",
-                        "value": "0.990604",
-                      },
-                    ],
-                  },
-                ],
-              },
-            ]
-        `);
+    await master.send(owner1, { value: toNano("1.2") }, { $$type: 'Transfer', query_id: 5n, amount: toNano(20), destination: owner1.address, response_destination: owner1.address, custom_payload: beginCell().endCell(), forward_ton_amount: toNano(1), forward_payload: beginCell().storeUint(0, 32).storeStringTail("hello owner1").endCell() });
+    await system.run();
 
-        // Check counter
-        expect(await contract.getCounter()).toEqual(1n);
+    console.log(inspect(tracker.collect(), true, null, true));
+    console.log(inspect(tracker_1.collect(), true, null, true));
 
-        // Non-owner
-        await contract.send(nonOwner, { value: toNano(1) }, "increment");
-        await system.run();
-        expect(track.collect()).toMatchInlineSnapshot(`
-            [
-              {
-                "$seq": 2,
-                "events": [
-                  {
-                    "$type": "received",
-                    "message": {
-                      "body": {
-                        "text": "increment",
-                        "type": "text",
-                      },
-                      "bounce": true,
-                      "from": "@treasure(non-owner)",
-                      "to": "@main",
-                      "type": "internal",
-                      "value": "1",
-                    },
-                  },
-                  {
-                    "$type": "failed",
-                    "errorCode": 4429,
-                    "errorMessage": "Invalid sender",
-                  },
-                  {
-                    "$type": "sent-bounced",
-                    "message": {
-                      "body": {
-                        "cell": "x{FFFFFFFF00000000696E6372656D656E74}",
-                        "type": "cell",
-                      },
-                      "bounce": false,
-                      "from": "@main",
-                      "to": "@treasure(non-owner)",
-                      "type": "internal",
-                      "value": "0.995112",
-                    },
-                  },
-                ],
-              },
-            ]
-        `);
-    });
+    expect((await master.getGetJettonData()).total_supply).toEqual(toNano(20));
+    expect((await owner1_wallet.getGetWalletData()).balance).toEqual(toNano(20));
+
+    await owner1_wallet.send(owner1, { value: toNano(1) }, { $$type: 'Burn', query_id: 144n, amount: toNano(5), response_destination: owner1.address, custom_payload: beginCell().endCell() });
+    await system.run();
+
+    console.log(inspect(tracker_1.collect(), true, null, true));
+    console.log(inspect(tracker.collect(), true, null, true));
+
+    expect((await master.getGetJettonData()).total_supply).toEqual(toNano(15));
+    expect((await owner1_wallet.getGetWalletData()).balance).toEqual(toNano(15));
+  });
+  // it("should deploy correctly", async () => {
+  //   let system = await ContractSystem.create();
+  //   let master = system.treasure("master");
+  //   let owner1 = system.treasure("owner1");
+  //   let owner2 = system.treasure("owner2");
+  //   let owner1_wallet = system.open(await TokenWallet.fromInit(owner1.address, master.address));
+  //   let owner2_wallet = system.open(await TokenWallet.fromInit(owner2.address, master.address));
+  //   let tracker_1 = system.track(owner1_wallet);
+  //   let tracker_2 = system.track(owner2_wallet);
+
+  //   await owner1_wallet.send(master, { value: toNano("0.05") }, { $$type: 'InternalTransfer', amount: toNano(100), query_id: 13n, from: master.address, response_destination: master.address, forward_ton_amount: 0n, forward_payload: beginCell().endCell() });
+  //   await system.run();
+
+  //   let event_1 = tracker_1.collect();
+  //   console.log(inspect(event_1, true, null, true));
+  //   let result_1 = await owner1_wallet.getGetWalletData();
+  //   expect(result_1.balance).toEqual(toNano(100));
+  //   expect(result_1.owner.equals(owner1.address)).toBeTruthy();
+  //   expect(result_1.master.equals(master.address)).toBeTruthy();
+
+  //   await owner1_wallet.send(owner1, { value: toNano("1.2") }, { $$type: 'Transfer', query_id: 5n, amount: toNano(20), destination: owner2.address, response_destination: owner1.address, custom_payload: beginCell().endCell(), forward_ton_amount: toNano(1), forward_payload: beginCell().storeUint(0, 32).storeStringTail("hello owner2").endCell() });
+  //   await system.run();
+  //   event_1 = tracker_1.collect();
+  //   let event_2 = tracker_2.collect();
+  //   console.log(inspect(event_1, true, null, true));
+  //   console.log(inspect(event_2, true, null, true));
+
+  //   result_1 = await owner1_wallet.getGetWalletData();
+  //   expect(result_1.balance).toEqual(toNano(80));
+  //   expect(result_1.owner.equals(owner1.address)).toBeTruthy();
+  //   expect(result_1.master.equals(master.address)).toBeTruthy();
+
+  //   let result_2 = await owner2_wallet.getGetWalletData();
+  //   expect(result_2.balance).toEqual(toNano(20));
+  //   expect(result_2.owner.equals(owner2.address)).toBeTruthy();
+  //   expect(result_2.master.equals(master.address)).toBeTruthy();
+  // });
+
 });

@@ -1,0 +1,12 @@
+{
+  "testnet": true,
+  "mnemonic": "cloud math forum hub sick theme cruise enemy walnut vast plastic rice fringe unaware boss prison honey nation maximum taxi news attack fall danger",
+  "ownerAddress": "0QAEeNZCTk9qSdz9F7JvkmvV2jct3Yzds0fxhKHr3JVNwyyA",
+  "minterAddress": "0QAEeNZCTk9qSdz9F7JvkmvV2jct3Yzds0fxhKHr3JVNwyyA",
+  "serviceWallet": "0QA6KMn5XKpl8KLAv18hH1EEqwZp2T9evIvfsZU4zoGCnCSa",
+  "jettonMaster": "kQDn8zzxQPbjaDwtuAyqH60UX5hozdEQl7_AEpiyHrGpHp7q",
+  "senderJettonWalletAddress": "kQDd6GyW8v9cNu5Pm9kaD2cPuIayjn28aqVes-kf0c3SO8pu",
+  "sellerAddress": "0QA6KMn5XKpl8KLAv18hH1EEqwZp2T9evIvfsZU4zoGCnCSa",
+  "refferalAddress": "0QA6KMn5XKpl8KLAv18hH1EEqwZp2T9evIvfsZU4zoGCnCSa",
+  "recipientAddress": "0QA6KMn5XKpl8KLAv18hH1EEqwZp2T9evIvfsZU4zoGCnCSa"
+}

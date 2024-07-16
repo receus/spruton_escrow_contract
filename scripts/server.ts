@@ -6,7 +6,7 @@ app.use(express.json());
 
 app.post('/distribute', async (req, res) => {
     try {
-        const { network, amount, serviceAddress, buyerAddress, referralAddress } = req.body;
+        const { network, amount, serviceAddress, buyerAddress, referrerAddress } = req.body;
 
         if (!network || !amount || !serviceAddress) {
             return res.status(400).send('Network, amount, and service address are required');
@@ -16,7 +16,7 @@ app.post('/distribute', async (req, res) => {
             return res.status(400).send('Network must be either testnet or mainnet');
         }
 
-        await run(network, BigInt(amount), serviceAddress, buyerAddress, referralAddress);
+        await run(network, BigInt(amount), serviceAddress, buyerAddress, referrerAddress);
 
         res.status(200).send('Transfer completed successfully');
     } catch (error) {

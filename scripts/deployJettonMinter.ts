@@ -5,7 +5,7 @@ import { promptAddress, promptBool } from '../wrappers/ui-utils';
 
 const formatUrl = 'https://gist.githubusercontent.com/receus/27e50749c18938219d5d1a7e0178e99d/raw/ba0396e43d5b9e91370dedce7699cf653147bf50/content2.json';
 
-// const tokenMetadataPath = path.join(__dirname, 'token_metadata.json');
+// const tokenMetadataPath = path.join(__dirname, './util/data.json');
 // const tokenContent = JSON.parse(fs.readFileSync(tokenMetadataPath, 'utf8'));
 
 export async function run(provider: NetworkProvider) {

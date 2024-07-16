@@ -1,6 +1,7 @@
 {
     "name": "Spruton",
     "description": "The official token for the Spruton platform",
-    "image": "https://i.ibb.co/z4W4rFg/logo-2.png",
-    "symbol": "SPRUTON"
+    "symbol": "SPRUTON",
+    "decimals": 0,
+    "image": "https://i.ibb.co/z4W4rFg/logo-2.png"
 }

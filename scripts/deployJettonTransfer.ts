@@ -1,10 +1,9 @@
-import express from 'express';
+import * as fs from "fs";
+import * as path from "path";
 import { Address, toNano, beginCell } from '@ton/core';
 import { JettonWallet } from '../wrappers/JettonWallet';
 import { TonClient, WalletContractV4 } from "@ton/ton";
 import { mnemonicToPrivateKey } from '@ton/crypto';
-import * as fs from "fs";
-import * as path from "path";
 import { getHttpEndpoint } from '@orbs-network/ton-access';
 
 export const mnemonicToKeys = mnemonicToPrivateKey;
@@ -84,12 +83,11 @@ export async function run(
     amount: bigint,
     serviceAddress: string,
     buyerAddress?: string,
-    referralAddress?: string
+    referrerAddress?: string
 ) {
     const configPath = path.resolve(__dirname, './util/config.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
-    // Calculate amounts
     const burnAmount = (amount * 15n) / 100n;
     const serviceAmount = (amount * 20n) / 100n;
     const referralAmount = (amount * 50n) / 100n;
@@ -99,8 +97,8 @@ export async function run(
         await transferTokens(network, serviceAmount, serviceAddress, config);
         await delay(20000);
 
-        if (referralAddress) {
-            await transferTokens(network, referralAmount, referralAddress, config);
+        if (referrerAddress) {
+            await transferTokens(network, referralAmount, referrerAddress, config);
             await delay(20000);
         }
 

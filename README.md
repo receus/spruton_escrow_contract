@@ -1,3 +1,6 @@
+yarn install
+
+
 # token
 
 ## Project structure
